@@ -1,0 +1,9 @@
+{
+  "name": "Switcher",
+  "description": "todo",
+  "uuid": "switcher@luchrioh",
+  "shell-version": [
+    "42"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.switcher"
+}

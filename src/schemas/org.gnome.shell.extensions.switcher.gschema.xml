@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema id="org.gnome.shell.extensions.switcher.behavior" path="/org/gnome/shell/extensions/switcher/behavior/">
+    </schema>
+
+    <schema id="org.gnome.shell.extensions.switcher.shortcuts" path="/org/gnome/shell/extensions/switcher/shortcuts/">
+        <key name="toggle-layers" type="as">
+            <default><![CDATA[['<Super>Space']]]></default>
+        </key>
+    </schema>
+</schemalist>
