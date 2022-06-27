@@ -80,9 +80,9 @@ export class Switcher {
             .filter(
                 (window) =>
                     window.get_monitor() === currentMonitor &&
-                    !!window.get_maximized() === !!startingWindow.get_maximized(),
+                    this._sameSwitchingGroup(window, startingWindow),
             )
-            .reverse();
+            .sort((a, b) => a.get_id() - b.get_id());
         console.log('mostRecentWindow', startingWindow.get_id());
         console.log(consideredWindows.map((w) => w.get_id()));
         switch (direction) {
@@ -93,6 +93,10 @@ export class Switcher {
             default:
                 return Clutter.EVENT_PROPAGATE;
         }
+    }
+
+    private _sameSwitchingGroup(a: Meta.Window, b: Meta.Window): boolean {
+        return !!a.get_maximized() === !!b.get_maximized();
     }
 
     private _getStartingWindow(event: Clutter.Event): Meta.Window | null {
@@ -106,13 +110,17 @@ export class Switcher {
             return null;
         }
         const [x, y] = event.get_coords();
-        return (
-            windowsOnCurrentMonitor.find((window) =>
-                rectangleContainsPoint(window.get_frame_rect(), x, y),
-            ) ??
-            windowsOnCurrentMonitor.find((window) => !window.get_maximized()) ??
-            windowsOnCurrentMonitor[0]
+        const windowUnderCursor = windowsOnCurrentMonitor.find((window) =>
+            rectangleContainsPoint(window.get_frame_rect(), x, y),
         );
+        if (windowUnderCursor) {
+            return windowsOnCurrentMonitor.find((window) =>
+                this._sameSwitchingGroup(windowUnderCursor, window),
+            ) as Meta.Window;
+        } else {
+            return windowsOnCurrentMonitor.find((window) => !window.get_maximized()) ??
+                windowsOnCurrentMonitor[0];
+        }
     }
 
     private _switchWindow(
