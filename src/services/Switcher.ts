@@ -117,7 +117,7 @@ export class Switcher {
                     window.get_monitor() === currentMonitor &&
                     this._sameSwitchingGroup(window, startingWindow),
             )
-            .sort((a, b) => a.get_id() - b.get_id());
+            .sort(windowSortPredicate);
         console.log('startingWindow', startingWindow.get_id());
         console.log(consideredWindows.map((w) => w.get_id()));
         switch (direction) {
@@ -131,13 +131,14 @@ export class Switcher {
     }
 
     private _sameSwitchingGroup(a: Meta.Window, b: Meta.Window): boolean {
-        if (!a.get_maximized() && !b.get_maximized()) {
-            return true;
-        } else if (!a.get_maximized() || !b.get_maximized()) {
-            return false;
-        } else {
-            return a.get_frame_rect().overlap(b.get_frame_rect());
-        }
+        return true;
+        // if (!a.get_maximized() && !b.get_maximized()) {
+        //     return true;
+        // } else if (!a.get_maximized() || !b.get_maximized()) {
+        //     return false;
+        // } else {
+        //     return a.get_frame_rect().overlap(b.get_frame_rect());
+        // }
     }
 
     private _getStartingWindow(event: Clutter.Event): Meta.Window | null {
@@ -196,4 +197,8 @@ export class Switcher {
 
 function rectangleContainsPoint(rect: Meta.Rectangle, x: number, y: number): boolean {
     return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+}
+
+function windowSortPredicate(a: Meta.Window, b: Meta.Window): number {
+    return b.get_maximized() - a.get_maximized() || a.get_id() - b.get_id();
 }
