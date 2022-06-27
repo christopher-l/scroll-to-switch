@@ -72,31 +72,47 @@ export class Switcher {
         const currentMonitor = global.display.get_current_monitor();
         const activeWorkspace = global.display.get_workspace_manager().get_active_workspace();
         const workspaceWindows = activeWorkspace.list_windows();
+        const startingWindow = this._getStartingWindow(event);
+        if (!startingWindow) {
+            return Clutter.EVENT_PROPAGATE;
+        }
+        const consideredWindows = workspaceWindows
+            .filter(
+                (window) =>
+                    window.get_monitor() === currentMonitor &&
+                    !!window.get_maximized() === !!startingWindow.get_maximized(),
+            )
+            .reverse();
+        console.log('mostRecentWindow', startingWindow.get_id());
+        console.log(consideredWindows.map((w) => w.get_id()));
+        switch (direction) {
+            case Clutter.ScrollDirection.UP:
+                return this._switchWindow(consideredWindows, startingWindow, 'up');
+            case Clutter.ScrollDirection.DOWN:
+                return this._switchWindow(consideredWindows, startingWindow, 'down');
+            default:
+                return Clutter.EVENT_PROPAGATE;
+        }
+    }
+
+    private _getStartingWindow(event: Clutter.Event): Meta.Window | null {
+        const activeWorkspace = global.display.get_workspace_manager().get_active_workspace();
+        const currentMonitor = global.display.get_current_monitor();
         const tabList = global.display.get_tab_list(Meta.TabList.NORMAL_ALL, activeWorkspace);
         const windowsOnCurrentMonitor = tabList.filter(
             (window) => window.get_monitor() === currentMonitor,
         );
         if (windowsOnCurrentMonitor.length === 0) {
-            return Clutter.EVENT_PROPAGATE;
+            return null;
         }
-        const mostRecentWindow = windowsOnCurrentMonitor[0];
-        const consideredWindows = workspaceWindows
-            .filter(
-                (window) =>
-                    window.get_monitor() === currentMonitor &&
-                    !!window.get_maximized() === !!mostRecentWindow.get_maximized(),
-            )
-            .reverse();
-        console.log('mostRecentWindow', mostRecentWindow.get_id());
-        console.log(consideredWindows.map((w) => w.get_id()));
-        switch (direction) {
-            case Clutter.ScrollDirection.UP:
-                return this._switchWindow(consideredWindows, mostRecentWindow, 'up');
-            case Clutter.ScrollDirection.DOWN:
-                return this._switchWindow(consideredWindows, mostRecentWindow, 'down');
-            default:
-                return Clutter.EVENT_PROPAGATE;
-        }
+        const [x, y] = event.get_coords();
+        return (
+            windowsOnCurrentMonitor.find((window) =>
+                rectangleContainsPoint(window.get_frame_rect(), x, y),
+            ) ??
+            windowsOnCurrentMonitor.find((window) => !window.get_maximized()) ??
+            windowsOnCurrentMonitor[0]
+        );
     }
 
     private _switchWindow(
@@ -125,4 +141,8 @@ export class Switcher {
         window.focus(global.get_current_time());
         window.raise();
     }
+}
+
+function rectangleContainsPoint(rect: Meta.Rectangle, x: number, y: number): boolean {
+    return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
 }
