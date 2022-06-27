@@ -27,6 +27,7 @@ export class Switcher {
 
     init() {
         this._registerScrollBinding();
+        // this._registerSuperRightClickBinding();
     }
 
     destroy() {
@@ -34,7 +35,25 @@ export class Switcher {
         this._onDestroy = [];
     }
 
-    toggleLayers() {}
+    toggleLayers() {
+        const currentMonitor = global.display.get_current_monitor();
+        const activeWorkspace = global.display.get_workspace_manager().get_active_workspace();
+        const tabList = global.display.get_tab_list(Meta.TabList.NORMAL_ALL, activeWorkspace);
+        const windowsOnCurrentMonitor = tabList.filter(
+            (window) => window.get_monitor() === currentMonitor,
+        );
+        if (windowsOnCurrentMonitor.length === 0) {
+            return;
+        }
+        const mostRecentWindow = windowsOnCurrentMonitor[0];
+        const windowsToRaise = windowsOnCurrentMonitor.filter(
+            (window) => !!window.get_maximized() !== !!mostRecentWindow.get_maximized(),
+        );
+        if (windowsToRaise.length > 0) {
+            windowsToRaise[0].focus(global.get_current_time());
+            windowsToRaise.reverse().forEach((window) => window.raise());
+        }
+    }
 
     private _registerScrollBinding() {
         const connectId = global.stage.connect('scroll-event', (stage, event: Clutter.Event) => {
@@ -47,6 +66,7 @@ export class Switcher {
                 return this._handleScroll(event);
             }
         });
+        // TODO: can we replace the method on the instance instead of the prototype?
         const originalHandleWorkspaceScroll = WindowManager.prototype.handleWorkspaceScroll;
         WindowManager.prototype.handleWorkspaceScroll = function (event: Clutter.Event) {
             if (Main.overview.visible) {
@@ -60,6 +80,21 @@ export class Switcher {
             WindowManager.prototype.handleWorkspaceScroll = originalHandleWorkspaceScroll;
         });
     }
+
+    // The right / middle click gets passed down to the window if we don't open a menu or something
+    // else here.
+    //
+    // private _registerSuperRightClickBinding() { const originalShowWindowMenu =
+    //     Main.wm._windowMenuManager.showWindowMenuForWindow; const self = this;
+    //     Main.wm._windowMenuManager.showWindowMenuForWindow = function (...params: unknown[]) {
+    //     const mods = global.get_pointer()[2]; if ((mods & global.display.compositor_modifiers)
+    //     === 0) { originalShowWindowMenu.apply(this, params); } else { self._toggleActiveLayer();
+    //         }
+    //     };
+    //     this._onDestroy.push(
+    //         () => (Main.wm._windowMenuManager.showWindowMenuForWindow = originalShowWindowMenu),
+    //     );
+    // }
 
     private _handleScroll(event: Clutter.Event): boolean {
         console.log('scroll-event');

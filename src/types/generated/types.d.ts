@@ -20,6 +20,7 @@ interface Global {
     log(msg: string): void;
     display: Meta.Display;
     workspace_manager: Meta.WorkspaceManager;
-    get_current_time: () => number;
     stage: Meta.Stage;
+    get_current_time: () => number;
+    get_pointer: () => [number, number, Clutter10.ModifierType];
 }
