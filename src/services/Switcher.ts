@@ -83,7 +83,7 @@ export class Switcher {
                     this._sameSwitchingGroup(window, startingWindow),
             )
             .sort((a, b) => a.get_id() - b.get_id());
-        console.log('mostRecentWindow', startingWindow.get_id());
+        console.log('startingWindow', startingWindow.get_id());
         console.log(consideredWindows.map((w) => w.get_id()));
         switch (direction) {
             case Clutter.ScrollDirection.UP:
@@ -96,7 +96,13 @@ export class Switcher {
     }
 
     private _sameSwitchingGroup(a: Meta.Window, b: Meta.Window): boolean {
-        return !!a.get_maximized() === !!b.get_maximized();
+        if (!a.get_maximized() && !b.get_maximized()) {
+            return true;
+        } else if (!a.get_maximized() || !b.get_maximized()) {
+            return false;
+        } else {
+            return a.get_frame_rect().overlap(b.get_frame_rect());
+        }
     }
 
     private _getStartingWindow(event: Clutter.Event): Meta.Window | null {
@@ -118,8 +124,10 @@ export class Switcher {
                 this._sameSwitchingGroup(windowUnderCursor, window),
             ) as Meta.Window;
         } else {
-            return windowsOnCurrentMonitor.find((window) => !window.get_maximized()) ??
-                windowsOnCurrentMonitor[0];
+            return (
+                windowsOnCurrentMonitor.find((window) => !window.get_maximized()) ??
+                windowsOnCurrentMonitor[0]
+            );
         }
     }
 
